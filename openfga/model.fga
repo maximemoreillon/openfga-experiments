@@ -1,0 +1,14 @@
+model
+  schema 1.1
+
+type user
+
+type item
+  relations
+    # roles: assigned with tuples
+    define owner: [user]
+    define viewer: [user]
+
+    # permissions: computed, used in check()
+    define can_view: viewer or owner
+    define can_delete: owner
