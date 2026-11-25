@@ -4,8 +4,6 @@ import openFga from "../openfga/client.ts";
 import { Item, type ItemType } from "../schemas/items.ts";
 import { ObjectId } from "@fastify/mongodb";
 
-const user = `john`;
-
 async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
   if (!fastify.mongo.db) throw new Error("MongoDB unavailable");
 
@@ -15,10 +13,17 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
     body: Item,
   };
 
-  fastify.post<{ Body: ItemType }>(
+  fastify.post<{ Body: ItemType; Headers: { "x-user": string } }>(
     "/items",
     { schema },
     async (request, reply) => {
+      const user = request.headers["x-user"];
+      if (!user)
+        return reply.code(401).send({
+          statusCode: 401,
+          error: "Unauthenticated",
+          message: "Unauthenticated",
+        });
       const { name } = request.body;
 
       const { insertedId } = await collection.insertOne({ name });
@@ -46,25 +51,42 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
     },
   );
 
-  fastify.get("/items", async (request, reply) => {
-    const { objects } = await openFga.listObjects({
-      user: `user:${user}`,
-      relation: "can_view",
-      type: "item",
-    });
-    const ids = objects.map((o) => new ObjectId(o.replace("item:", "")));
-    return await collection.find({ _id: { $in: ids } }).toArray();
-  });
-
-  fastify.get<{ Params: { id: string } }>(
-    "/items/:id",
+  fastify.get<{ Headers: { "x-user": string } }>(
+    "/items",
     async (request, reply) => {
-      const { id } = request.params;
+      const user = request.headers["x-user"];
+      if (!user)
+        return reply.code(401).send({
+          statusCode: 401,
+          error: "Unauthenticated",
+          message: "Unauthenticated",
+        });
+      const { objects } = await openFga.listObjects({
+        user: `user:${user}`,
+        relation: "can_view",
+        type: "item",
+      });
+      const ids = objects.map((o) => new ObjectId(o.replace("item:", "")));
+      return await collection.find({ _id: { $in: ids } }).toArray();
+    },
+  );
+
+  fastify.get<{ Params: { _id: string }; Headers: { "x-user": string } }>(
+    "/items/:_id",
+    async (request, reply) => {
+      const user = request.headers["x-user"];
+      if (!user)
+        return reply.code(401).send({
+          statusCode: 401,
+          error: "Unauthenticated",
+          message: "Unauthenticated",
+        });
+      const { _id } = request.params;
 
       const { allowed } = await openFga.check({
         user: `user:${user}`,
         relation: "can_view",
-        object: `item:${id}`,
+        object: `item:${_id}`,
       });
 
       if (!allowed)
@@ -74,19 +96,26 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
           message: "You do not have permission to access this resource",
         });
 
-      return await collection.findOne({ _id: new ObjectId(id) });
+      return await collection.findOne({ _id: new ObjectId(_id) });
     },
   );
 
-  fastify.delete<{ Params: { id: string } }>(
-    "/items/:id",
+  fastify.delete<{ Params: { _id: string }; Headers: { "x-user": string } }>(
+    "/items/:_id",
     async (request, reply) => {
-      const { id } = request.params;
+      const user = request.headers["x-user"];
+      if (!user)
+        return reply.code(401).send({
+          statusCode: 401,
+          error: "Unauthenticated",
+          message: "Unauthenticated",
+        });
+      const { _id } = request.params;
 
       const { allowed } = await openFga.check({
         user: `user:${user}`,
         relation: "can_delete",
-        object: `item:${id}`,
+        object: `item:${_id}`,
       });
 
       if (!allowed)
@@ -96,11 +125,12 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
           message: "You do not have permission to access this resource",
         });
 
+      await collection.deleteOne({ _id: new ObjectId(_id) });
       // Delete all tuples
-      const { tuples } = await openFga.read({ object: `item:${id}` });
+      const { tuples } = await openFga.read({ object: `item:${_id}` });
       if (tuples.length) await openFga.deleteTuples(tuples.map((t) => t.key));
 
-      return await collection.deleteOne({ _id: new ObjectId(id) });
+      return { _id };
     },
   );
 }
