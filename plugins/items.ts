@@ -96,6 +96,10 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
           message: "You do not have permission to access this resource",
         });
 
+      // Delete all tuples
+      const { tuples } = await openFga.read({ object: `item:${id}` });
+      if (tuples.length) await openFga.deleteTuples(tuples.map((t) => t.key));
+
       return await collection.deleteOne({ _id: new ObjectId(id) });
     },
   );
