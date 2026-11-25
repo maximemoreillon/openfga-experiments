@@ -1,14 +1,11 @@
 import fastifyPlugin from "fastify-plugin";
 import fastifyMongo from "@fastify/mongodb";
-import type { FastifyPluginOptions, FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 
 const { MONGODB_URL = "mongodb://localhost:27017/openfga-fastify" } =
   process.env;
 
-async function dbConnector(
-  fastify: FastifyInstance,
-  options: FastifyPluginOptions,
-) {
+async function dbConnector(fastify: FastifyInstance) {
   fastify.register(fastifyMongo, {
     url: MONGODB_URL,
   });

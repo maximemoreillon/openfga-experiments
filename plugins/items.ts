@@ -1,10 +1,10 @@
-import type { FastifyInstance, FastifyPluginOptions } from "fastify";
+import type { FastifyInstance } from "fastify";
 
 import openFga from "../openfga/client.ts";
 import { Item, type ItemType } from "../schemas/items.ts";
 import { ObjectId } from "@fastify/mongodb";
 
-async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
+async function routes(fastify: FastifyInstance) {
   if (!fastify.mongo.db) throw new Error("MongoDB unavailable");
 
   const collection = fastify.mongo.db.collection("items");
@@ -17,14 +17,10 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
     "/items",
     { schema },
     async (request, reply) => {
-      const user = request.headers["x-user"];
-      if (!user)
-        return reply.code(401).send({
-          statusCode: 401,
-          error: "Unauthenticated",
-          message: "Unauthenticated",
-        });
-      const { name } = request.body;
+      const {
+        user,
+        body: { name },
+      } = request;
 
       const { insertedId } = await collection.insertOne({ name });
 
@@ -54,13 +50,8 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
   fastify.get<{ Headers: { "x-user": string } }>(
     "/items",
     async (request, reply) => {
-      const user = request.headers["x-user"];
-      if (!user)
-        return reply.code(401).send({
-          statusCode: 401,
-          error: "Unauthenticated",
-          message: "Unauthenticated",
-        });
+      const { user } = request;
+
       const { objects } = await openFga.listObjects({
         user: `user:${user}`,
         relation: "can_view",
@@ -74,14 +65,10 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
   fastify.get<{ Params: { _id: string }; Headers: { "x-user": string } }>(
     "/items/:_id",
     async (request, reply) => {
-      const user = request.headers["x-user"];
-      if (!user)
-        return reply.code(401).send({
-          statusCode: 401,
-          error: "Unauthenticated",
-          message: "Unauthenticated",
-        });
-      const { _id } = request.params;
+      const {
+        user,
+        params: { _id },
+      } = request;
 
       const { allowed } = await openFga.check({
         user: `user:${user}`,
@@ -103,14 +90,10 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
   fastify.delete<{ Params: { _id: string }; Headers: { "x-user": string } }>(
     "/items/:_id",
     async (request, reply) => {
-      const user = request.headers["x-user"];
-      if (!user)
-        return reply.code(401).send({
-          statusCode: 401,
-          error: "Unauthenticated",
-          message: "Unauthenticated",
-        });
-      const { _id } = request.params;
+      const {
+        user,
+        params: { _id },
+      } = request;
 
       const { allowed } = await openFga.check({
         user: `user:${user}`,
