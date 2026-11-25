@@ -122,7 +122,7 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
         return reply.code(403).send({
           statusCode: 403,
           error: "Forbidden",
-          message: "You do not have permission to access this resource",
+          message: "You do not have permission to delete this resource",
         });
 
       await collection.deleteOne({ _id: new ObjectId(_id) });
