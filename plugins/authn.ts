@@ -8,7 +8,7 @@ declare module "fastify" {
   }
 }
 
-async function auth(fastify: FastifyInstance) {
+async function authn(fastify: FastifyInstance) {
   fastify.decorateRequest("user", "");
 
   fastify.addHook("onRequest", async (request, reply) => {
@@ -25,4 +25,4 @@ async function auth(fastify: FastifyInstance) {
 
 // Wrapping a plugin function with fastify-plugin exposes the decorators
 // and hooks, declared inside the plugin to the parent scope.
-export default fastifyPlugin(auth);
+export default fastifyPlugin(authn);

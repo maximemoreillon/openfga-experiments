@@ -12,3 +12,4 @@ type item
     # permissions: computed, used in check()
     define can_view: viewer or owner
     define can_delete: owner
+    define can_share: owner
