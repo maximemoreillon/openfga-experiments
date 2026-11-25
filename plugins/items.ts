@@ -3,6 +3,7 @@ import viewers from "./viewers.ts";
 import openFga from "../openfga/client.ts";
 import { Item, type ItemType } from "../schemas/items.ts";
 import { ObjectId } from "@fastify/mongodb";
+import requirePermission from "../utils/requirePermission.ts";
 
 async function routes(fastify: FastifyInstance) {
   if (!fastify.mongo.db) throw new Error("MongoDB unavailable");
@@ -60,48 +61,22 @@ async function routes(fastify: FastifyInstance) {
     },
   );
 
-  fastify.get<{ Params: { _id: string } }>("/:_id", async (request, reply) => {
-    const {
-      user,
-      params: { _id },
-    } = request;
+  fastify.get<{ Params: { _id: string } }>(
+    "/:_id",
+    { preHandler: requirePermission("can_view", "item") },
+    async (request, reply) => {
+      const { _id } = request.params;
 
-    const { allowed } = await openFga.check({
-      user: `user:${user}`,
-      relation: "can_view",
-      object: `item:${_id}`,
-    });
-
-    if (!allowed)
-      return reply.code(403).send({
-        statusCode: 403,
-        error: "Forbidden",
-        message: "You do not have permission to access this resource",
-      });
-
-    return await collection.findOne({ _id: new ObjectId(_id) });
-  });
+      return await collection.findOne({ _id: new ObjectId(_id) });
+    },
+  );
 
   fastify.delete<{ Params: { _id: string } }>(
     "/:_id",
+    { preHandler: requirePermission("can_delete", "item") },
+
     async (request, reply) => {
-      const {
-        user,
-        params: { _id },
-      } = request;
-
-      const { allowed } = await openFga.check({
-        user: `user:${user}`,
-        relation: "can_delete",
-        object: `item:${_id}`,
-      });
-
-      if (!allowed)
-        return reply.code(403).send({
-          statusCode: 403,
-          error: "Forbidden",
-          message: "You do not have permission to delete this resource",
-        });
+      const { _id } = request.params;
 
       await collection.deleteOne({ _id: new ObjectId(_id) });
       // Delete all tuples
