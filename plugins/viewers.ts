@@ -1,28 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import openFga from "../openfga/client.ts";
+import requirePermission from "../utils/requirePermission.ts";
 
 async function routes(fastify: FastifyInstance) {
   fastify.addHook<{ Params: { _id: string } }>(
     "preHandler",
-    async (request, reply) => {
-      const {
-        user,
-        params: { _id },
-      } = request;
-
-      const { allowed } = await openFga.check({
-        user: `user:${user}`,
-        relation: "can_share",
-        object: `item:${_id}`,
-      });
-
-      if (!allowed)
-        return reply.code(403).send({
-          statusCode: 403,
-          error: "Forbidden",
-          message: "You do not have permission to do this",
-        });
-    },
+    requirePermission("can_share", "item"),
   );
 
   fastify.get<{ Params: { _id: string } }>("/", async (request, reply) => {

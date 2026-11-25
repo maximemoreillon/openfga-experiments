@@ -46,20 +46,17 @@ async function routes(fastify: FastifyInstance) {
     return { insertedId };
   });
 
-  fastify.get<{ Headers: { "x-user": string } }>(
-    "/",
-    async (request, reply) => {
-      const { user } = request;
+  fastify.get("/", async (request, reply) => {
+    const { user } = request;
 
-      const { objects } = await openFga.listObjects({
-        user: `user:${user}`,
-        relation: "can_view",
-        type: "item",
-      });
-      const ids = objects.map((o) => new ObjectId(o.replace("item:", "")));
-      return await collection.find({ _id: { $in: ids } }).toArray();
-    },
-  );
+    const { objects } = await openFga.listObjects({
+      user: `user:${user}`,
+      relation: "can_view",
+      type: "item",
+    });
+    const ids = objects.map((o) => new ObjectId(o.replace("item:", "")));
+    return await collection.find({ _id: { $in: ids } }).toArray();
+  });
 
   fastify.get<{ Params: { _id: string } }>(
     "/:_id",
