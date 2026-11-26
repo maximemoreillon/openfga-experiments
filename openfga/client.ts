@@ -2,7 +2,7 @@ import "dotenv/config";
 import { OpenFgaClient } from "@openfga/sdk";
 
 const {
-  FGA_API_URL = "http://localhost",
+  FGA_API_URL = "http://localhost:8080",
   FGA_STORE_ID,
   FGA_MODEL_ID,
 } = process.env;

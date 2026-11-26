@@ -1,6 +1,6 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import items from "./plugins/items.ts";
+import items from "./plugins/items/index.ts";
 import db from "./plugins/db.ts";
 import authn from "./plugins/authn.ts";
 

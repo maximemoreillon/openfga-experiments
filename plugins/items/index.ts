@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import viewers from "./viewers.ts";
-import openFga from "../openfga/client.ts";
-import { Item, type ItemType } from "../schemas/items.ts";
+import openFga from "../../openfga/client.ts";
+import { Item, type ItemType } from "../../schemas/items.ts";
 import { ObjectId } from "@fastify/mongodb";
-import requirePermission from "../utils/requirePermission.ts";
+import requirePermission from "../../utils/requirePermission.ts";
 
 async function routes(fastify: FastifyInstance) {
   if (!fastify.mongo.db) throw new Error("MongoDB unavailable");
